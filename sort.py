@@ -1,6 +1,6 @@
 import pandas as pd
 
-csv_file = "mixed_data.csv"
+csv_file = "verified.csv"
 
 df = pd.read_csv(csv_file)
 
