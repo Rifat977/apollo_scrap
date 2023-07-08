@@ -8,9 +8,15 @@ from flatten_json import flatten
 url = "https://api.apollo.io/v1/mixed_people/search"
 csv_file = 'mixed_data.csv'
 
-person_titles = ["director", "head", "vp"]
+person_titles = [
+    "nursing home",
+    "nursing homes",
+    "assisted living",
+    "retirement home",
+    "memory care",
+    "retirement community"
+]
 
-api_key = "roJC_xyKj4WPjhMBo3VVRA"
 
 
 headers = {
@@ -22,23 +28,23 @@ all_people = []
 needed_data = int(input("Enter the number of data needed: "))
 data_count = 0
 
+api_key = "ZUqZYPkbtWpl6yAy2ORLrQ"
 
 for person_title in person_titles:
     page = 1
     while data_count < needed_data:
         payload = {
             "api_key" : api_key,
-            "organization_num_employees_ranges": ["11,20", "21,50"],
-            "person_locations": ["United States"],
-            "organization_industry_tag_ids": ["5567cdd47369643dbf260000"],
-            "contact_email_status": ["verified", "guessed"],
-            "finder_view_id": "6481ce7e007e2900a31d73ab",
             "page": page,
-            "person_seniorities": person_titles,
-            "person_department_or_subdepartments": ["sales_executive", "master_sales"],
+            "organization_keyword_tags": person_titles,
+            "organization_num_employees_ranges": ["1,10", "11,20", "21,50"],
+            "person_locations": ["United States"],
+            "included_organization_keyword_fields": ["tags", "name"],
+            "page": 1,
+            "person_titles": ["marketing"],
+            "prospected_by_current_team": ["no"],
             "display_mode": "explorer_mode",
             "per_page": 25,
-            "num_fetch_result": 1,
             "context": "people-index-page",
             "show_suggestions": False,
             "ui_finder_random_seed": "sl6dq24o97",
