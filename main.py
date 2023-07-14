@@ -2,8 +2,50 @@ import requests
 import json
 import csv
 from flatten_json import flatten
+from urllib.parse import urlparse, parse_qs, unquote
+import subprocess
 
-url = "https://api.apollo.io/v1/mixed_people/search"
+
+url = input("Enter the URL: ")
+parsed_url = urlparse(url)
+query_params = parse_qs(parsed_url.query, keep_blank_values=True)
+
+
+fragment_params = {}
+if parsed_url.fragment:
+    for item in parsed_url.fragment.split('&'):
+        key_value = item.split('=')
+        if len(key_value) == 2:
+            key, value = key_value
+            key = unquote(key).rstrip('[]')
+            value = unquote(value)
+            if key in fragment_params:
+                fragment_params[key].append(value)
+            else:
+                fragment_params[key] = [value]
+
+api_key = "aiYbdwT0rGO_FEQOJTs2og"
+
+payload = {
+    "api_key": api_key,
+    "page": 1,
+    "per_page": 25,
+    "display_mode": "explorer_mode",
+    "show_suggestions": False,
+    "ui_finder_random_seed": "sl6dq24o97",
+    "cacheKey": 1686239974184
+}
+
+for key, values in query_params.items():
+    key = unquote(key).rstrip('[]')
+    values = [unquote(value) for value in values]
+    payload[key] = values
+
+for key, values in fragment_params.items():
+    payload[key] = values
+
+source = "https://api.apollo.io/v1/mixed_people/search"
+
 csv_file = 'mixed_data.csv'
 
 headers = {
@@ -15,53 +57,24 @@ all_people = []
 needed_data = int(input("Enter the number of data needed: "))
 data_count = 0
 
-api_key = "YEG6pQpChQnaY0yHfisbpw"
+data_count = 0
+payload['page'] = 1
+while data_count < needed_data:
+    response = requests.post(source, data=json.dumps(payload), headers=headers)
 
-organization_keyword_tags = [
-    "nursing home",
-    "nursing homes",
-    "assisted living",
-    "retirement home",
-    "memory care",
-    "retirement community"
-]
-
-payload = {
-    "api_key": api_key,
-    "organization_num_employees_ranges": ["1,10", "11,20", "21,50"],
-    "person_locations": ["United States"],
-    "included_organization_keyword_fields": ["tags", "name"],
-    "page": 1,
-    "person_titles": ["marketing"],
-    "prospected_by_current_team": ["no"],
-    "display_mode": "explorer_mode",
-    "per_page": 25,
-    "context": "people-index-page",
-    "show_suggestions": False,
-    "ui_finder_random_seed": "sl6dq24o97",
-    "cacheKey": 1686239974184
-}
-
-for organization_keyword_tag in organization_keyword_tags:
-    payload["organization_keyword_tags"] = [organization_keyword_tag]
-    data_count = 0
-    payload['page'] = 1
-    while data_count < needed_data:
-        response = requests.post(url, data=json.dumps(payload), headers=headers)
-
-        if response.status_code == 200:
-            response_data = response.json()
-            retrieved_people = response_data['people']
-            all_people.extend(retrieved_people)
-            data_count += len(retrieved_people)
-            print(f"Retrieved data from page {payload['page']}")
-            payload['page'] += 1
-        elif response.status_code == 422:
-            print(f"No more data available for organization keyword tag: {organization_keyword_tag}")
-            break
-        else:
-            print(f"Error: Request failed for status code {response.status_code}")
-            break
+    if response.status_code == 200:
+        response_data = response.json()
+        retrieved_people = response_data['people']
+        all_people.extend(retrieved_people)
+        data_count += len(retrieved_people)
+        print(f"Retrieved data from page {payload['page']}")
+        payload['page'] += 1
+    elif response.status_code == 422:
+        print("No more data available.")
+        break
+    else:
+        print(f"Error: Request failed for status code {response.status_code}")
+        break
 
 flattened_people = [flatten(person) for person in all_people]
 
@@ -71,3 +84,6 @@ with open(csv_file, 'w', newline='', encoding='utf-8') as file:
     writer = csv.DictWriter(file, fieldnames=field_names)
     writer.writeheader()
     writer.writerows(flattened_people)
+
+
+subprocess.run(['python', 'sort.py'])
